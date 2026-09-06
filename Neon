@@ -1,0 +1,2999 @@
+index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Cyberpunk personal operations dashboard">
+<title>NEON // OPERATIONS DASHBOARD</title>
+
+<!-- Sole external runtime dependency -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+/* =========================================================
+   NEON // OPERATIONS DASHBOARD
+   Self-contained CSS
+   ========================================================= */
+
+:root {
+  --bg: #0a0813;
+  --bg-2: #120c1f;
+  --bg-3: #171025;
+  --panel: rgba(18, 12, 31, 0.94);
+  --panel-2: rgba(10, 8, 19, 0.88);
+
+  --red: #ff0055;
+  --red-2: #ff2a2a;
+  --pink: #ff71ce;
+  --pink-2: #ff00a0;
+  --cyan: #00f3ff;
+
+  --text: #eee9ff;
+  --muted: #a9a0c7;
+  --dim: #706887;
+
+  --border: rgba(255, 0, 85, 0.72);
+  --border-soft: rgba(169, 160, 199, 0.2);
+
+  --shadow-red: 0 0 10px rgba(255, 0, 85, .3);
+  --shadow-pink: 0 0 14px rgba(255, 0, 160, .28);
+  --shadow-cyan: 0 0 12px rgba(0, 243, 255, .25);
+
+  --radius: 4px;
+  --gap: 14px;
+  --mono: "Courier New", Consolas, Monaco, monospace;
+  --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+}
+
+body {
+  min-width: 0;
+  margin: 0;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(255, 0, 85, .08), transparent 30%),
+    radial-gradient(circle at 90% 10%, rgba(0, 243, 255, .045), transparent 28%),
+    linear-gradient(180deg, #0a0813 0%, #0d0917 50%, #08070e 100%);
+}
+
+/* CRT scanline / grid atmosphere */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: .18;
+  background:
+    linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.012) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: .035;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0,
+    transparent 2px,
+    #fff 3px
+  );
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  color: var(--text);
+  background: #0b0913;
+  border: 1px solid rgba(169,160,199,.24);
+  border-radius: var(--radius);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s, background .15s;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--cyan);
+  box-shadow: var(--shadow-cyan);
+  background: #100c1b;
+}
+
+input[type="number"],
+input[type="time"],
+.mono {
+  font-family: var(--mono);
+}
+
+button {
+  color: var(--text);
+  background: #160d24;
+  border: 1px solid var(--border);
+  padding: 8px 11px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-red);
+  transition: .15s ease;
+}
+
+button:hover {
+  color: #fff;
+  border-color: var(--pink);
+  box-shadow: 0 0 15px rgba(255,0,160,.38);
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+button.primary {
+  background: rgba(255,0,85,.12);
+  border-color: var(--pink);
+}
+
+button.cyan {
+  border-color: var(--cyan);
+  box-shadow: var(--shadow-cyan);
+}
+
+button.danger {
+  background: rgba(255,0,85,.2);
+  border-color: var(--red-2);
+}
+
+.small {
+  font-size: 11px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.dim {
+  color: var(--dim);
+}
+
+.mono {
+  font-family: var(--mono);
+}
+
+.app {
+  width: min(1800px, 100%);
+  margin: 0 auto;
+  padding: clamp(10px, 2vw, 24px);
+}
+
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--gap);
+  container-type: inline-size;
+}
+
+.module {
+  min-width: 0;
+  background:
+    linear-gradient(145deg, rgba(255,0,85,.035), transparent 35%),
+    var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-red);
+  overflow: hidden;
+}
+
+.module-header {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 13px;
+  border-bottom: 1px solid rgba(255,0,85,.28);
+  background: rgba(255,0,85,.045);
+}
+
+.module-title {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+  color: var(--pink);
+}
+
+.module-title::before {
+  content: "// ";
+  color: var(--cyan);
+}
+
+.module-body {
+  min-width: 0;
+  padding: 14px;
+}
+
+.header-module {
+  grid-column: 1 / -1;
+}
+
+.timetable-module {
+  grid-column: 1 / -1;
+}
+
+.checklist-module {
+  grid-column: span 4;
+}
+
+.shift-module {
+  grid-column: span 4;
+}
+
+.budget-module {
+  grid-column: span 4;
+}
+
+.goals-module {
+  grid-column: 1 / -1;
+}
+
+/* =========================================================
+   Header / Clock
+   ========================================================= */
+
+.header-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, .8fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.clock-console {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 10px;
+}
+
+.clock-label {
+  color: var(--cyan);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .18em;
+  margin-bottom: 5px;
+}
+
+.clock {
+  min-width: 0;
+  font-family: var(--mono);
+  font-size: clamp(38px, 8vw, 92px);
+  line-height: .95;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: #ff5da0;
+  text-shadow:
+    0 0 3px #fff,
+    0 0 8px var(--pink),
+    0 0 22px var(--red),
+    0 0 42px rgba(255,0,85,.65);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+.date-readout {
+  margin-top: 9px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.alarm-panel {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-content: center;
+  padding: 14px;
+  border: 1px solid rgba(255,113,206,.25);
+  background: rgba(0,0,0,.18);
+}
+
+.alarm-panel label {
+  display: block;
+  margin-bottom: 5px;
+  font-family: var(--mono);
+  color: var(--muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.alarm-time {
+  font-size: 22px;
+  padding: 8px;
+  font-family: var(--mono);
+}
+
+.arm-control {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 70px;
+  gap: 5px;
+}
+
+.switch {
+  position: relative;
+  width: 46px;
+  height: 24px;
+  display: inline-block;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--dim);
+  border-radius: 999px;
+  background: #09070d;
+  transition: .2s;
+}
+
+.slider::before {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  left: 3px;
+  top: 3px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: .2s;
+}
+
+.switch input:checked + .slider {
+  border-color: var(--pink);
+  box-shadow: 0 0 12px rgba(255,0,160,.5);
+}
+
+.switch input:checked + .slider::before {
+  transform: translateX(22px);
+  background: var(--pink);
+  box-shadow: 0 0 10px var(--pink);
+}
+
+.arm-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted);
+}
+
+.audio-test {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.alarm-banner {
+  display: none;
+  grid-column: 1 / -1;
+  padding: 11px;
+  text-align: center;
+  font-family: var(--mono);
+  font-weight: 700;
+  letter-spacing: .14em;
+  color: #fff;
+  background: rgba(255,0,85,.22);
+  border: 1px solid var(--red-2);
+  box-shadow: 0 0 18px rgba(255,0,85,.7);
+  animation: alarmPulse .65s infinite alternate;
+}
+
+.alarm-banner.active {
+  display: block;
+}
+
+@keyframes alarmPulse {
+  from { opacity: .55; }
+  to {
+    opacity: 1;
+    box-shadow: 0 0 35px rgba(255,0,85,.9);
+  }
+}
+
+/* =========================================================
+   Timetable
+   ========================================================= */
+
+.week-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.week-label {
+  font-family: var(--mono);
+  color: var(--cyan);
+  font-size: 13px;
+}
+
+.week-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.timetable-scroll {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.timetable {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 54px repeat(7, minmax(0, 1fr));
+  border-top: 1px solid rgba(169,160,199,.18);
+  border-left: 1px solid rgba(169,160,199,.18);
+}
+
+.time-head,
+.day-head,
+.time-cell,
+.schedule-cell {
+  min-width: 0;
+  border-right: 1px solid rgba(169,160,199,.16);
+  border-bottom: 1px solid rgba(169,160,199,.16);
+}
+
+.time-head,
+.day-head {
+  min-height: 47px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  background: #100b1b;
+}
+
+.time-head {
+  color: var(--dim);
+  font-family: var(--mono);
+  font-size: 9px;
+}
+
+.day-head {
+  flex-direction: column;
+  color: var(--pink);
+  font-family: var(--mono);
+  font-size: 11px;
+  text-align: center;
+}
+
+.day-head .day-date {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.time-cell {
+  min-height: 42px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 6px 2px;
+  color: var(--dim);
+  background: rgba(0,0,0,.18);
+  font-family: var(--mono);
+  font-size: 9px;
+}
+
+.schedule-cell {
+  min-height: 42px;
+  background:
+    linear-gradient(90deg, rgba(255,0,85,.015), transparent);
+}
+
+.schedule-cell input {
+  height: 100%;
+  min-height: 41px;
+  border: 0;
+  border-radius: 0;
+  padding: 6px;
+  background: transparent;
+  font-family: var(--mono);
+  font-size: 10px;
+}
+
+.schedule-cell input:focus {
+  background: rgba(255,0,160,.06);
+  box-shadow: inset 0 0 10px rgba(255,0,160,.15);
+}
+
+.schedule-cell.current-hour {
+  box-shadow: inset 0 0 0 1px rgba(0,243,255,.55);
+}
+
+/* =========================================================
+   General controls
+   ========================================================= */
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.field {
+  min-width: 0;
+}
+
+.field.full {
+  grid-column: 1 / -1;
+}
+
+.field label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.field input,
+.field textarea,
+.field select {
+  padding: 8px;
+  font-size: 12px;
+}
+
+textarea {
+  min-height: 64px;
+  resize: vertical;
+}
+
+.section-label {
+  margin: 15px 0 8px;
+  padding-bottom: 5px;
+  color: var(--cyan);
+  border-bottom: 1px solid rgba(0,243,255,.18);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+/* =========================================================
+   Checklists
+   ========================================================= */
+
+.checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.check-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 21px minmax(0, 1fr) 25px;
+  gap: 7px;
+  align-items: center;
+  padding: 7px;
+  border: 1px solid rgba(169,160,199,.13);
+  background: rgba(0,0,0,.15);
+}
+
+.check-row input[type="text"] {
+  border: 0;
+  padding: 3px;
+  background: transparent;
+  font-size: 11px;
+}
+
+.check-row.done input[type="text"] {
+  color: var(--dim);
+  text-decoration: line-through;
+}
+
+.check-box {
+  appearance: none;
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  border: 1px solid var(--pink);
+  background: #0a0710;
+  cursor: pointer;
+  position: relative;
+}
+
+.check-box:checked {
+  background: rgba(255,0,160,.2);
+  box-shadow: 0 0 10px rgba(255,0,160,.55);
+}
+
+.check-box:checked::after {
+  content: "✓";
+  position: absolute;
+  inset: -2px 0 0;
+  text-align: center;
+  color: var(--pink);
+  font-weight: 900;
+  font-size: 14px;
+}
+
+.delete-btn {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  color: var(--dim);
+  border-color: rgba(169,160,199,.15);
+  box-shadow: none;
+}
+
+.add-row {
+  margin-top: 8px;
+  width: 100%;
+}
+
+/* =========================================================
+   Shift tracker
+   ========================================================= */
+
+.shift-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.status-card {
+  padding: 8px 5px;
+  text-align: center;
+  border: 1px solid rgba(169,160,199,.15);
+  background: rgba(0,0,0,.18);
+}
+
+.status-value {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.status-caption {
+  margin-top: 3px;
+  color: var(--dim);
+  font-size: 8px;
+  text-transform: uppercase;
+}
+
+.shift-table {
+  display: grid;
+  grid-template-columns: 62px minmax(65px, 1fr) minmax(72px, 1.2fr);
+  border-top: 1px solid rgba(169,160,199,.14);
+  border-left: 1px solid rgba(169,160,199,.14);
+}
+
+.shift-table > div {
+  min-width: 0;
+  padding: 7px 5px;
+  border-right: 1px solid rgba(169,160,199,.14);
+  border-bottom: 1px solid rgba(169,160,199,.14);
+  font-family: var(--mono);
+  font-size: 9px;
+}
+
+.shift-head {
+  color: var(--cyan);
+  background: #100b1b;
+}
+
+.shift-row-on {
+  color: var(--pink);
+}
+
+.shift-row-off {
+  color: var(--muted);
+}
+
+.shift-row-dismount {
+  color: var(--cyan);
+}
+
+.shift-controls {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-bottom: 9px;
+}
+
+.flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.flag input {
+  width: auto;
+}
+
+/* =========================================================
+   Budget
+   ========================================================= */
+
+.budget-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  margin-bottom: 12px;
+}
+
+.metric-box {
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid rgba(255,0,85,.2);
+  background: rgba(0,0,0,.18);
+}
+
+.metric-name {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 8px;
+  text-transform: uppercase;
+}
+
+.metric-value {
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--pink);
+  font-family: var(--mono);
+  font-size: 15px;
+}
+
+.chart-wrap {
+  position: relative;
+  width: 100%;
+  min-height: 220px;
+  height: 260px;
+}
+
+.chart-wrap canvas {
+  max-width: 100%;
+}
+
+.budget-log {
+  margin-top: 10px;
+  max-height: 160px;
+  overflow: auto;
+}
+
+.budget-entry {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr) 80px 24px;
+  gap: 5px;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(169,160,199,.1);
+}
+
+.budget-entry span {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted);
+}
+
+.budget-entry .amount {
+  color: var(--pink);
+  text-align: right;
+}
+
+/* =========================================================
+   Goals / Running
+   ========================================================= */
+
+.goal-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.goal {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(255,0,85,.2);
+  background: rgba(0,0,0,.16);
+}
+
+.goal-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 7px;
+}
+
+.goal-name {
+  min-width: 0;
+  color: var(--pink);
+  font-family: var(--mono);
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.goal-percent {
+  flex: 0 0 auto;
+  color: var(--cyan);
+  font-family: var(--mono);
+  font-size: 10px;
+}
+
+.progress {
+  height: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(169,160,199,.2);
+  background: #09070e;
+}
+
+.progress > div {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--red), var(--pink));
+  box-shadow: 0 0 10px rgba(255,0,160,.6);
+  transition: width .25s;
+}
+
+.goal-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.goal-fields input {
+  font-size: 10px;
+  padding: 6px;
+}
+
+.run-layout {
+  display: grid;
+  grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.pace-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 18px;
+  border: 1px solid rgba(0,243,255,.2);
+  background: rgba(0,243,255,.025);
+  text-align: center;
+}
+
+.pace-value {
+  color: var(--cyan);
+  font-family: var(--mono);
+  font-size: clamp(28px, 5vw, 46px);
+  text-shadow: 0 0 12px rgba(0,243,255,.5);
+}
+
+.pace-unit {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+}
+
+.run-log {
+  max-height: 190px;
+  overflow: auto;
+  margin-top: 8px;
+}
+
+.run-entry {
+  display: grid;
+  grid-template-columns: 74px 1fr 74px 74px 24px;
+  gap: 5px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(169,160,199,.1);
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted);
+}
+
+.run-entry strong {
+  color: var(--pink);
+  font-weight: normal;
+}
+
+/* =========================================================
+   Footer
+   ========================================================= */
+
+.system-footer {
+  padding: 10px 2px 2px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: var(--dim);
+  font-family: var(--mono);
+  font-size: 9px;
+}
+
+.save-indicator {
+  color: var(--cyan);
+}
+
+/* =========================================================
+   Container queries
+   ========================================================= */
+
+@container (max-width: 1050px) {
+  .checklist-module,
+  .shift-module,
+  .budget-module {
+    grid-column: span 6;
+  }
+
+  .budget-module {
+    grid-column: 1 / -1;
+  }
+}
+
+@container (max-width: 720px) {
+  .header-grid,
+  .run-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .checklist-module,
+  .shift-module,
+  .budget-module {
+    grid-column: 1 / -1;
+  }
+
+  .goal-list {
+    grid-template-columns: 1fr;
+  }
+
+  .clock {
+    font-size: clamp(30px, 11vw, 58px);
+  }
+
+  .timetable {
+    grid-template-columns: 43px repeat(7, minmax(0, 1fr));
+  }
+
+  .day-head {
+    font-size: 9px;
+  }
+
+  .day-head .day-date {
+    font-size: 8px;
+  }
+
+  .schedule-cell input {
+    padding: 4px 2px;
+    font-size: 8px;
+  }
+
+  .time-cell {
+    font-size: 8px;
+  }
+
+  .budget-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .run-entry {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .run-entry .delete-btn {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .app {
+    padding: 7px;
+  }
+
+  .module-body {
+    padding: 9px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .field.full {
+    grid-column: auto;
+  }
+
+  .alarm-panel {
+    grid-template-columns: 1fr auto;
+  }
+
+  .week-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .week-actions {
+    width: 100%;
+  }
+
+  .week-actions button {
+    flex: 1;
+  }
+
+  .timetable {
+    grid-template-columns: 34px repeat(7, minmax(0, 1fr));
+  }
+
+  .time-head,
+  .day-head {
+    min-height: 42px;
+  }
+
+  .time-cell,
+  .schedule-cell,
+  .schedule-cell input {
+    min-height: 37px;
+  }
+
+  .day-head {
+    writing-mode: horizontal-tb;
+  }
+
+  .day-head .day-date {
+    display: none;
+  }
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+  <div class="dashboard">
+
+    <!-- =====================================================
+         MODULE 1: CLOCK / ALARM
+         ===================================================== -->
+    <section class="module header-module">
+      <div class="module-header">
+        <h2 class="module-title">Chronos // Alarm & Audio Trigger</h2>
+        <span class="small muted mono" id="systemStatus">SYSTEM ONLINE</span>
+      </div>
+
+      <div class="module-body">
+        <div class="header-grid">
+
+          <div class="clock-console">
+            <div class="clock-label">LOCAL SYSTEM TIME</div>
+            <div class="clock" id="digitalClock">00:00:00</div>
+            <div class="date-readout" id="dateReadout">LOADING DATE...</div>
+          </div>
+
+          <div class="alarm-panel">
+            <div>
+              <label for="alarmTime">Alarm target</label>
+              <input
+                id="alarmTime"
+                class="alarm-time"
+                type="time"
+                step="60"
+                aria-label="Alarm time"
+              >
+            </div>
+
+            <div class="arm-control">
+              <label class="switch" title="Arm / disarm alarm">
+                <input id="alarmArmed" type="checkbox">
+                <span class="slider"></span>
+              </label>
+              <span class="arm-label" id="armLabel">DISARM</span>
+            </div>
+
+            <div class="audio-test">
+              <button class="cyan" id="audioTestBtn">TEST AUDIO</button>
+              <span class="small muted">
+                Browser audio requires one user interaction before autonomous alarm playback.
+              </span>
+            </div>
+          </div>
+
+          <div class="alarm-banner" id="alarmBanner">
+            ⚠ ALARM ACTIVE // SYNTHESIZER TRIGGERED ⚠
+            <button class="danger" id="stopAlarmBtn">STOP ALARM</button>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+
+    <!-- =====================================================
+         MODULE 2: WEEKLY TIMETABLE
+         ===================================================== -->
+    <section class="module timetable-module">
+      <div class="module-header">
+        <h2 class="module-title">Temporal Matrix // Weekly Timetable</h2>
+        <span class="small muted mono" id="weekKeyReadout"></span>
+      </div>
+
+      <div class="module-body">
+        <div class="week-toolbar">
+          <div class="week-label" id="weekLabel">WEEK LOADING...</div>
+
+          <div class="week-actions">
+            <button id="prevWeek">← Previous Week</button>
+            <button class="primary" id="thisWeek">This Week</button>
+            <button id="nextWeek">Next Week →</button>
+          </div>
+        </div>
+
+        <div class="timetable-scroll">
+          <div class="timetable" id="timetable"></div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- =====================================================
+         MODULE 3: CHECKLISTS
+         ===================================================== -->
+    <section class="module checklist-module">
+      <div class="module-header">
+        <h2 class="module-title">Operations // Workflow Checklist</h2>
+        <span class="small muted mono">LIVE STATE</span>
+      </div>
+
+      <div class="module-body">
+
+        <div class="section-label">Daily Quick Tasks</div>
+        <div class="checklist" id="dailyChecklist"></div>
+        <button class="add-row" id="addDailyTask">+ ADD DAILY TASK</button>
+
+        <div class="section-label">Operational Procedures</div>
+        <div class="checklist" id="opsChecklist"></div>
+        <button class="add-row" id="addOpsTask">+ ADD PROCEDURE</button>
+
+        <div class="section-label">Maintenance Log</div>
+        <div class="field">
+          <label for="maintenanceLog">Circuit / Equipment Notes</label>
+          <textarea
+            id="maintenanceLog"
+            placeholder="Record inspections, faults, maintenance actions..."
+          ></textarea>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- =====================================================
+         MODULE 4: SHIFT ROTATION
+         ===================================================== -->
+    <section class="module shift-module">
+      <div class="module-header">
+        <h2 class="module-title">Rotation // 2 ON / 2 OFF</h2>
+        <span class="small muted mono">ROLLING 28D</span>
+      </div>
+
+      <div class="module-body">
+
+        <div class="shift-controls">
+          <div class="field" style="flex:1;min-width:140px;">
+            <label for="rotationAnchor">Rotation anchor date</label>
+            <input id="rotationAnchor" type="date">
+          </div>
+
+          <div style="display:flex;align-items:flex-end;">
+            <label class="flag">
+              <input id="coverageOverride" type="checkbox">
+              COVERAGE OVERRIDE
+            </label>
+          </div>
+        </div>
+
+        <div class="shift-summary">
+          <div class="status-card">
+            <div class="status-value shift-row-on" id="onCount">0</div>
+            <div class="status-caption">On Duty</div>
+          </div>
+          <div class="status-card">
+            <div class="status-value shift-row-off" id="offCount">0</div>
+            <div class="status-caption">Off Duty</div>
+          </div>
+          <div class="status-card">
+            <div class="status-value shift-row-dismount" id="overrideCount">0</div>
+            <div class="status-caption">Overrides</div>
+          </div>
+        </div>
+
+        <div class="shift-table" id="shiftTable"></div>
+
+      </div>
+    </section>
+
+
+    <!-- =====================================================
+         MODULE 5: BUDGET / CHART
+         ===================================================== -->
+    <section class="module budget-module">
+      <div class="module-header">
+        <h2 class="module-title">Markets // Budget & Volatility</h2>
+        <span class="small muted mono">LOCAL DATASET</span>
+      </div>
+
+      <div class="module-body">
+
+        <div class="budget-metrics">
+          <div class="metric-box">
+            <div class="metric-name">Budget Limit</div>
+            <div class="metric-value" id="budgetMetric">$0.00</div>
+          </div>
+
+          <div class="metric-box">
+            <div class="metric-name">Actual Spend</div>
+            <div class="metric-value" id="spendMetric">$0.00</div>
+          </div>
+
+          <div class="metric-box">
+            <div class="metric-name">Remaining</div>
+            <div class="metric-value" id="remainingMetric">$0.00</div>
+          </div>
+        </div>
+
+        <div class="form-grid">
+
+          <div class="field">
+            <label for="budgetLimit">Budget Limit</label>
+            <input id="budgetLimit" type="number" step="0.01" min="0">
+          </div>
+
+          <div class="field">
+            <label for="actualSpend">Actual Expenditure</label>
+            <input id="actualSpend" type="number" step="0.01" min="0">
+          </div>
+
+          <div class="field">
+            <label for="goldPrice">Spot Gold XAU/USD</label>
+            <input id="goldPrice" type="number" step="0.01" min="0">
+          </div>
+
+          <div class="field">
+            <label for="brentPrice">Brent Crude</label>
+            <input id="brentPrice" type="number" step="0.01" min="0">
+          </div>
+
+          <div class="field">
+            <label for="budgetEntryValue">Log Budget / Market Value</label>
+            <input id="budgetEntryValue" type="number" step="0.01">
+          </div>
+
+          <div class="field">
+            <label for="budgetEntryLabel">Entry Label</label>
+            <input id="budgetEntryLabel" type="text" placeholder="e.g. Week 1 spend">
+          </div>
+
+          <div class="field full">
+            <button class="primary" id="addBudgetEntry">+ LOG DATA POINT</button>
+          </div>
+
+        </div>
+
+        <div class="chart-wrap">
+          <canvas id="budgetChart"></canvas>
+        </div>
+
+        <div class="budget-log" id="budgetLog"></div>
+
+      </div>
+    </section>
+
+
+    <!-- =====================================================
+         MODULE 6: GOALS / RUNNING
+         ===================================================== -->
+    <section class="module goals-module">
+      <div class="module-header">
+        <h2 class="module-title">Performance // Goals & Running Metrics</h2>
+        <span class="small muted mono">TRACKER ACTIVE</span>
+      </div>
+
+      <div class="module-body">
+
+        <div class="section-label">Goal Progress</div>
+
+        <div class="goal-list" id="goalList">
+
+          <div class="goal">
+            <div class="goal-head">
+              <span class="goal-name">DISTANCE TARGET</span>
+              <span class="goal-percent" id="goal1Percent">0%</span>
+            </div>
+
+            <div class="progress">
+              <div id="goal1Bar"></div>
+            </div>
+
+            <div class="goal-fields">
+              <input id="goal1Current" type="number" min="0" step="0.1" placeholder="Current">
+              <input id="goal1Target" type="number" min="0" step="0.1" placeholder="Target">
+            </div>
+          </div>
+
+          <div class="goal">
+            <div class="goal-head">
+              <span class="goal-name">RUNS COMPLETED</span>
+              <span class="goal-percent" id="goal2Percent">0%</span>
+            </div>
+
+            <div class="progress">
+              <div id="goal2Bar"></div>
+            </div>
+
+            <div class="goal-fields">
+              <input id="goal2Current" type="number" min="0" step="1" placeholder="Current">
+              <input id="goal2Target" type="number" min="0" step="1" placeholder="Target">
+            </div>
+          </div>
+
+          <div class="goal">
+            <div class="goal-head">
+              <span class="goal-name">PERFORMANCE TARGET</span>
+              <span class="goal-percent" id="goal3Percent">0%</span>
+            </div>
+
+            <div class="progress">
+              <div id="goal3Bar"></div>
+            </div>
+
+            <div class="goal-fields">
+              <input id="goal3Current" type="number" min="0" step="0.1" placeholder="Current">
+              <input id="goal3Target" type="number" min="0" step="0.1" placeholder="Target">
+            </div>
+          </div>
+
+        </div>
+
+
+        <div class="section-label">Running Performance Log</div>
+
+        <div class="run-layout">
+
+          <div class="form-grid">
+
+            <div class="field">
+              <label for="runDistance">Distance (km)</label>
+              <input id="runDistance" type="number" min="0" step="0.01" placeholder="5.00">
+            </div>
+
+            <div class="field">
+              <label for="runTime">Elapsed Time (HH:MM:SS)</label>
+              <input id="runTime" type="text" placeholder="00:30:00">
+            </div>
+
+            <div class="field full">
+              <button class="primary" id="addRun">+ LOG RUN</button>
+            </div>
+
+          </div>
+
+          <div class="pace-display">
+            <div>
+              <div class="pace-value" id="paceValue">--:--</div>
+              <div class="pace-unit">MIN / KM // CURRENT ENTRY</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="run-log" id="runLog"></div>
+
+      </div>
+    </section>
+
+  </div>
+
+  <div class="system-footer">
+    <span>NEON OPS // CLIENT-SIDE PERSISTENCE // NO BACKEND</span>
+    <span class="save-indicator" id="saveIndicator">LOCAL STORAGE READY</span>
+  </div>
+
+</div>
+
+
+<script>
+/* =========================================================
+   NEON // OPERATIONS DASHBOARD
+   Structured localStorage state engine
+   ========================================================= */
+
+(() => {
+  "use strict";
+
+  const STORAGE_KEY = "neon_ops_dashboard_v1";
+
+  let state = {
+    alarm: {
+      time: "07:00",
+      armed: false
+    },
+
+    timetable: {},
+
+    checklists: {
+      daily: [
+        { id: uid(), text: "Review daily priorities", done: false },
+        { id: uid(), text: "Check communications / messages", done: false },
+        { id: uid(), text: "Confirm equipment status", done: false }
+      ],
+      ops: [
+        { id: uid(), text: "Equipment inspection", done: false },
+        { id: uid(), text: "Circuit / power check", done: false },
+        { id: uid(), text: "Maintenance log updated", done: false }
+      ],
+      maintenanceLog: ""
+    },
+
+    shift: {
+      anchor: "",
+      coverageOverride: false,
+      overrides: {}
+    },
+
+    budget: {
+      limit: 0,
+      spend: 0,
+      gold: 0,
+      brent: 0,
+      entries: []
+    },
+
+    goals: {
+      goal1Current: 0,
+      goal1Target: 100,
+      goal2Current: 0,
+      goal2Target: 10,
+      goal3Current: 0,
+      goal3Target: 100
+    },
+
+    runs: []
+  };
+
+  let currentWeekOffset = 0;
+  let budgetChart = null;
+
+  let audioContext = null;
+  let alarmOscillators = [];
+  let alarmGain = null;
+  let alarmActive = false;
+  let lastAlarmTrigger = "";
+
+  /* =======================================================
+     Utilities
+     ======================================================= */
+
+  function uid() {
+    return (
+      Date.now().toString(36) +
+      Math.random().toString(36).slice(2, 8)
+    );
+  }
+
+  function deepMerge(target, source) {
+    if (!source || typeof source !== "object") return target;
+
+    Object.keys(source).forEach(key => {
+      if (
+        source[key] &&
+        typeof source[key] === "object" &&
+        !Array.isArray(source[key])
+      ) {
+        if (!target[key] || typeof target[key] !== "object") {
+          target[key] = {};
+        }
+        deepMerge(target[key], source[key]);
+      } else {
+        target[key] = source[key];
+      }
+    });
+
+    return target;
+  }
+
+  function formatMoney(value) {
+    const n = Number(value) || 0;
+
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 2
+    }).format(n);
+  }
+
+  function pad(n) {
+    return String(n).padStart(2, "0");
+  }
+
+  function dateKey(date) {
+    return [
+      date.getFullYear(),
+      pad(date.getMonth() + 1),
+      pad(date.getDate())
+    ].join("-");
+  }
+
+  function parseDate(value) {
+    if (!value) return null;
+
+    const parts = value.split("-").map(Number);
+
+    if (parts.length !== 3) return null;
+
+    return new Date(
+      parts[0],
+      parts[1] - 1,
+      parts[2]
+    );
+  }
+
+  function mondayOf(date) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+
+    const day = d.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+
+    d.setDate(d.getDate() + diff);
+
+    return d;
+  }
+
+  function addDays(date, amount) {
+    const d = new Date(date);
+    d.setDate(d.getDate() + amount);
+    return d;
+  }
+
+  function formatShortDate(date) {
+    return date.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric"
+    });
+  }
+
+  function formatLongDate(date) {
+    return date.toLocaleDateString(undefined, {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric"
+    });
+  }
+
+  function isoWeek(date) {
+    const d = new Date(
+      Date.UTC(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate()
+      )
+    );
+
+    const dayNum = d.getUTCDay() || 7;
+
+    d.setUTCDate(
+      d.getUTCDate() + 4 - dayNum
+    );
+
+    const yearStart = new Date(
+      Date.UTC(d.getUTCFullYear(), 0, 1)
+    );
+
+    return Math.ceil(
+      (((d - yearStart) / 86400000) + 1) / 7
+    );
+  }
+
+  function weekStorageKey(monday) {
+    return (
+      monday.getFullYear() +
+      "-W" +
+      pad(isoWeek(monday))
+    );
+  }
+
+  function setSaveIndicator(message = "SAVED LOCALLY") {
+    const el = document.getElementById("saveIndicator");
+
+    if (!el) return;
+
+    el.textContent = message;
+
+    clearTimeout(setSaveIndicator.timer);
+
+    setSaveIndicator.timer = setTimeout(() => {
+      el.textContent = "LOCAL STORAGE READY";
+    }, 900);
+  }
+
+  /* =======================================================
+     Required State Functions
+     ======================================================= */
+
+  function saveState() {
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(state)
+      );
+
+      setSaveIndicator();
+    } catch (error) {
+      console.error("localStorage save failed:", error);
+      setSaveIndicator("STORAGE ERROR");
+    }
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+
+      if (!raw) return;
+
+      const parsed = JSON.parse(raw);
+
+      deepMerge(state, parsed);
+    } catch (error) {
+      console.error("localStorage load failed:", error);
+      setSaveIndicator("STORAGE READ ERROR");
+    }
+  }
+
+  /* =======================================================
+     Module 1: Clock / Alarm / Web Audio
+     ======================================================= */
+
+  function updateClock() {
+    const now = new Date();
+
+    const clock = document.getElementById("digitalClock");
+    const dateReadout = document.getElementById("dateReadout");
+
+    clock.textContent =
+      pad(now.getHours()) +
+      ":" +
+      pad(now.getMinutes()) +
+      ":" +
+      pad(now.getSeconds());
+
+    dateReadout.textContent =
+      formatLongDate(now);
+
+    checkAlarm(now);
+  }
+
+  function initAudio() {
+    if (!audioContext) {
+      const AudioCtx =
+        window.AudioContext ||
+        window.webkitAudioContext;
+
+      if (!AudioCtx) {
+        alert("Web Audio API is not supported in this browser.");
+        return null;
+      }
+
+      audioContext = new AudioCtx();
+    }
+
+    if (audioContext.state === "suspended") {
+      audioContext.resume();
+    }
+
+    return audioContext;
+  }
+
+  function beepOnce(startTime, frequency = 880, duration = .22) {
+    if (!audioContext) return;
+
+    const oscillator =
+      audioContext.createOscillator();
+
+    const gain =
+      audioContext.createGain();
+
+    oscillator.type = "square";
+    oscillator.frequency.setValueAtTime(
+      frequency,
+      startTime
+    );
+
+    gain.gain.setValueAtTime(
+      .0001,
+      startTime
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+      .65,
+      startTime + .015
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+      .0001,
+      startTime + duration
+    );
+
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+
+    oscillator.start(startTime);
+    oscillator.stop(startTime + duration);
+
+    alarmOscillators.push(oscillator);
+  }
+
+  function startAlarm() {
+    initAudio();
+
+    if (!audioContext) return;
+
+    stopAlarm(false);
+
+    alarmActive = true;
+
+    document
+      .getElementById("alarmBanner")
+      .classList.add("active");
+
+    let t = audioContext.currentTime + .03;
+
+    for (let i = 0; i < 12; i++) {
+      beepOnce(
+        t,
+        i % 2 === 0 ? 880 : 1320,
+        .24
+      );
+
+      beepOnce(
+        t + .28,
+        i % 2 === 0 ? 660 : 1100,
+        .18
+      );
+
+      t += .7;
+    }
+  }
+
+  function stopAlarm(showState = true) {
+    alarmOscillators.forEach(osc => {
+      try {
+        osc.stop();
+      } catch (_) {}
+    });
+
+    alarmOscillators = [];
+
+    alarmActive = false;
+
+    document
+      .getElementById("alarmBanner")
+      .classList.remove("active");
+
+    if (showState) {
+      document.getElementById("systemStatus").textContent =
+        "ALARM SILENCED";
+    }
+  }
+
+  function checkAlarm(now) {
+    if (!state.alarm.armed || alarmActive) return;
+
+    const current =
+      pad(now.getHours()) +
+      ":" +
+      pad(now.getMinutes());
+
+    const triggerKey =
+      dateKey(now) + "_" + current;
+
+    if (
+      current === state.alarm.time &&
+      lastAlarmTrigger !== triggerKey
+    ) {
+      lastAlarmTrigger = triggerKey;
+      startAlarm();
+    }
+  }
+
+  function renderAlarm() {
+    document.getElementById("alarmTime").value =
+      state.alarm.time || "07:00";
+
+    document.getElementById("alarmArmed").checked =
+      Boolean(state.alarm.armed);
+
+    document.getElementById("armLabel").textContent =
+      state.alarm.armed ? "ARM" : "DISARM";
+  }
+
+  document
+    .getElementById("alarmTime")
+    .addEventListener("change", e => {
+      state.alarm.time = e.target.value;
+      saveState();
+    });
+
+  document
+    .getElementById("alarmArmed")
+    .addEventListener("change", e => {
+      state.alarm.armed = e.target.checked;
+
+      document.getElementById("armLabel").textContent =
+        state.alarm.armed ? "ARM" : "DISARM";
+
+      document.getElementById("systemStatus").textContent =
+        state.alarm.armed
+          ? "ALARM ARMED"
+          : "SYSTEM ONLINE";
+
+      initAudio();
+      saveState();
+    });
+
+  document
+    .getElementById("audioTestBtn")
+    .addEventListener("click", () => {
+      initAudio();
+
+      if (!audioContext) return;
+
+      const t = audioContext.currentTime;
+
+      beepOnce(t, 660, .18);
+      beepOnce(t + .25, 990, .18);
+      beepOnce(t + .5, 1320, .25);
+    });
+
+  document
+    .getElementById("stopAlarmBtn")
+    .addEventListener("click", () => {
+      stopAlarm();
+    });
+
+  /* =======================================================
+     Module 2: Timetable
+     ======================================================= */
+
+  const dayNames = [
+    "MON",
+    "TUE",
+    "WED",
+    "THU",
+    "FRI",
+    "SAT",
+    "SUN"
+  ];
+
+  function renderTimetable() {
+    const today = new Date();
+
+    let monday = mondayOf(today);
+
+    monday = addDays(
+      monday,
+      currentWeekOffset * 7
+    );
+
+    const weekKey = weekStorageKey(monday);
+
+    const sunday = addDays(monday, 6);
+
+    document.getElementById("weekLabel").textContent =
+      "WEEK " +
+      isoWeek(monday) +
+      " // " +
+      formatShortDate(monday) +
+      " — " +
+      formatShortDate(sunday);
+
+    document.getElementById("weekKeyReadout").textContent =
+      weekKey;
+
+    const container =
+      document.getElementById("timetable");
+
+    container.innerHTML = "";
+
+    const corner = document.createElement("div");
+
+    corner.className = "time-head";
+    corner.textContent = "TIME";
+
+    container.appendChild(corner);
+
+    for (let day = 0; day < 7; day++) {
+      const date = addDays(monday, day);
+
+      const head =
+        document.createElement("div");
+
+      head.className = "day-head";
+
+      head.innerHTML = `
+        <span>${dayNames[day]}</span>
+        <span class="day-date">${formatShortDate(date)}</span>
+      `;
+
+      container.appendChild(head);
+    }
+
+    for (let hour = 0; hour < 24; hour++) {
+      const timeCell =
+        document.createElement("div");
+
+      timeCell.className = "time-cell";
+      timeCell.textContent = pad(hour) + ":00";
+
+      container.appendChild(timeCell);
+
+      for (let day = 0; day < 7; day++) {
+        const date = addDays(monday, day);
+
+        const cell =
+          document.createElement("div");
+
+        cell.className = "schedule-cell";
+
+        const input =
+          document.createElement("input");
+
+        input.type = "text";
+        input.placeholder = "—";
+
+        /*
+          Unique storage key:
+          week / calendar date / day / hour
+        */
+        const key =
+          weekKey +
+          "__" +
+          dateKey(date) +
+          "__D" +
+          day +
+          "__H" +
+          hour;
+
+        input.dataset.storageKey = key;
+
+        input.value =
+          state.timetable[key] || "";
+
+        if (
+          dateKey(date) === dateKey(today) &&
+          hour === today.getHours()
+        ) {
+          cell.classList.add("current-hour");
+        }
+
+        input.addEventListener("input", e => {
+          state.timetable[key] = e.target.value;
+          saveState();
+        });
+
+        cell.appendChild(input);
+        container.appendChild(cell);
+      }
+    }
+  }
+
+  document
+    .getElementById("prevWeek")
+    .addEventListener("click", () => {
+      currentWeekOffset--;
+      renderTimetable();
+    });
+
+  document
+    .getElementById("thisWeek")
+    .addEventListener("click", () => {
+      currentWeekOffset = 0;
+      renderTimetable();
+    });
+
+  document
+    .getElementById("nextWeek")
+    .addEventListener("click", () => {
+      currentWeekOffset++;
+      renderTimetable();
+    });
+
+  /* =======================================================
+     Module 3: Checklists
+     ======================================================= */
+
+  function renderChecklist(type) {
+    const container =
+      document.getElementById(
+        type === "daily"
+          ? "dailyChecklist"
+          : "opsChecklist"
+      );
+
+    container.innerHTML = "";
+
+    state.checklists[type].forEach(item => {
+      const row =
+        document.createElement("div");
+
+      row.className =
+        "check-row" +
+        (item.done ? " done" : "");
+
+      const checkbox =
+        document.createElement("input");
+
+      checkbox.type = "checkbox";
+      checkbox.className = "check-box";
+      checkbox.checked = item.done;
+
+      checkbox.addEventListener("change", () => {
+        item.done = checkbox.checked;
+        renderChecklist(type);
+        saveState();
+      });
+
+      const text =
+        document.createElement("input");
+
+      text.type = "text";
+      text.value = item.text;
+      text.placeholder = "Task / procedure...";
+
+      text.addEventListener("input", () => {
+        item.text = text.value;
+        saveState();
+      });
+
+      const deleteButton =
+        document.createElement("button");
+
+      deleteButton.className = "delete-btn";
+      deleteButton.textContent = "×";
+      deleteButton.title = "Delete task";
+
+      deleteButton.addEventListener("click", () => {
+        state.checklists[type] =
+          state.checklists[type].filter(
+            x => x.id !== item.id
+          );
+
+        renderChecklist(type);
+        saveState();
+      });
+
+      row.append(
+        checkbox,
+        text,
+        deleteButton
+      );
+
+      container.appendChild(row);
+    });
+  }
+
+  function addChecklistItem(type, defaultText) {
+    state.checklists[type].push({
+      id: uid(),
+      text: defaultText,
+      done: false
+    });
+
+    renderChecklist(type);
+    saveState();
+  }
+
+  document
+    .getElementById("addDailyTask")
+    .addEventListener("click", () => {
+      addChecklistItem(
+        "daily",
+        "New daily task"
+      );
+    });
+
+  document
+    .getElementById("addOpsTask")
+    .addEventListener("click", () => {
+      addChecklistItem(
+        "ops",
+        "New operational procedure"
+      );
+    });
+
+  document
+    .getElementById("maintenanceLog")
+    .addEventListener("input", e => {
+      state.checklists.maintenanceLog =
+        e.target.value;
+
+      saveState();
+    });
+
+  /* =======================================================
+     Module 4: Shift Rotation
+     ======================================================= */
+
+  function getShiftStatus(date) {
+    const anchor =
+      parseDate(state.shift.anchor) ||
+      mondayOf(new Date());
+
+    anchor.setHours(0, 0, 0, 0);
+
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+
+    const diff =
+      Math.round(
+        (d - anchor) / 86400000
+      );
+
+    const cycle =
+      ((diff % 4) + 4) % 4;
+
+    if (cycle < 2) return "ON DUTY";
+
+    return "OFF DUTY";
+  }
+
+  function renderShift() {
+    const table =
+      document.getElementById("shiftTable");
+
+    table.innerHTML = "";
+
+    const headers = [
+      "DATE",
+      "STATUS",
+      "FLAG"
+    ];
+
+    headers.forEach(header => {
+      const div =
+        document.createElement("div");
+
+      div.className = "shift-head";
+      div.textContent = header;
+
+      table.appendChild(div);
+    });
+
+    let on = 0;
+    let off = 0;
+    let overrides = 0;
+
+    const today = new Date();
+
+    for (let i = 0; i < 28; i++) {
+      const anchor =
+        parseDate(state.shift.anchor) ||
+        mondayOf(today);
+
+      const date =
+        addDays(anchor, i);
+
+      const key = dateKey(date);
+
+      let status =
+        getShiftStatus(date);
+
+      const isOverride =
+        Boolean(state.shift.overrides[key]);
+
+      if (isOverride) {
+        status = "DISMOUNT";
+        overrides++;
+      } else if (status === "ON DUTY") {
+        on++;
+      } else {
+        off++;
+      }
+
+      const dateDiv =
+        document.createElement("div");
+
+      dateDiv.textContent =
+        formatShortDate(date);
+
+      if (
+        dateKey(date) === dateKey(today)
+      ) {
+        dateDiv.style.color = "var(--cyan)";
+        dateDiv.style.fontWeight = "700";
+      }
+
+      const statusDiv =
+        document.createElement("div");
+
+      statusDiv.textContent = status;
+
+      statusDiv.className =
+        status === "ON DUTY"
+          ? "shift-row-on"
+          : status === "OFF DUTY"
+            ? "shift-row-off"
+            : "shift-row-dismount";
+
+      const flagDiv =
+        document.createElement("div");
+
+      const flag =
+        document.createElement("input");
+
+      flag.type = "checkbox";
+      flag.checked = isOverride;
+      flag.title = "Coverage / absenteeism override";
+
+      flag.addEventListener("change", () => {
+        if (flag.checked) {
+          state.shift.overrides[key] = true;
+        } else {
+          delete state.shift.overrides[key];
+        }
+
+        renderShift();
+        saveState();
+      });
+
+      flagDiv.appendChild(flag);
+
+      table.append(
+        dateDiv,
+        statusDiv,
+        flagDiv
+      );
+    }
+
+    document.getElementById("onCount").textContent = on;
+    document.getElementById("offCount").textContent = off;
+    document.getElementById("overrideCount").textContent = overrides;
+  }
+
+  document
+    .getElementById("rotationAnchor")
+    .addEventListener("change", e => {
+      state.shift.anchor =
+        e.target.value;
+
+      renderShift();
+      saveState();
+    });
+
+  document
+    .getElementById("coverageOverride")
+    .addEventListener("change", e => {
+      state.shift.coverageOverride =
+        e.target.checked;
+
+      saveState();
+    });
+
+  /* =======================================================
+     Module 5: Budget / Chart
+     ======================================================= */
+
+  function renderBudget() {
+    const limit =
+      Number(state.budget.limit) || 0;
+
+    const spend =
+      Number(state.budget.spend) || 0;
+
+    const remaining =
+      limit - spend;
+
+    document.getElementById("budgetMetric")
+      .textContent = formatMoney(limit);
+
+    document.getElementById("spendMetric")
+      .textContent = formatMoney(spend);
+
+    document.getElementById("remainingMetric")
+      .textContent = formatMoney(remaining);
+
+    document.getElementById("budgetLimit").value =
+      state.budget.limit || "";
+
+    document.getElementById("actualSpend").value =
+      state.budget.spend || "";
+
+    document.getElementById("goldPrice").value =
+      state.budget.gold || "";
+
+    document.getElementById("brentPrice").value =
+      state.budget.brent || "";
+
+    renderBudgetLog();
+    renderBudgetChart();
+  }
+
+  function renderBudgetLog() {
+    const container =
+      document.getElementById("budgetLog");
+
+    container.innerHTML = "";
+
+    const entries =
+      state.budget.entries || [];
+
+    [...entries]
+      .reverse()
+      .forEach(entry => {
+        const row =
+          document.createElement("div");
+
+        row.className = "budget-entry";
+
+        const date =
+          document.createElement("span");
+
+        date.textContent = entry.date;
+
+        const label =
+          document.createElement("span");
+
+        label.textContent = entry.label;
+
+        const amount =
+          document.createElement("span");
+
+        amount.className = "amount";
+        amount.textContent =
+          formatMoney(entry.value);
+
+        const deleteButton =
+          document.createElement("button");
+
+        deleteButton.className =
+          "delete-btn";
+
+        deleteButton.textContent = "×";
+
+        deleteButton.addEventListener("click", () => {
+          state.budget.entries =
+            state.budget.entries.filter(
+              x => x.id !== entry.id
+            );
+
+          renderBudget();
+          saveState();
+        });
+
+        row.append(
+          date,
+          label,
+          amount,
+          deleteButton
+        );
+
+        container.appendChild(row);
+      });
+  }
+
+  function renderBudgetChart() {
+    if (
+      typeof Chart === "undefined"
+    ) {
+      return;
+    }
+
+    const canvas =
+      document.getElementById("budgetChart");
+
+    const entries =
+      state.budget.entries || [];
+
+    const labels =
+      entries.map(x => x.date);
+
+    const values =
+      entries.map(x => Number(x.value) || 0);
+
+    if (budgetChart) {
+      budgetChart.destroy();
+    }
+
+    budgetChart =
+      new Chart(canvas, {
+        type: "line",
+
+        data: {
+          labels,
+
+          datasets: [
+            {
+              label: "Budget / Market Data",
+              data: values,
+              borderColor: "#ff0055",
+              backgroundColor: "rgba(255,0,85,.08)",
+              pointBackgroundColor: "#ff71ce",
+              pointBorderColor: "#ff71ce",
+              pointRadius: 3,
+              pointHoverRadius: 6,
+              borderWidth: 2,
+              tension: .25,
+              fill: true
+            }
+          ]
+        },
+
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+
+          interaction: {
+            intersect: false,
+            mode: "index"
+          },
+
+          plugins: {
+            legend: {
+              labels: {
+                color: "#a9a0c7",
+                font: {
+                  family: "Courier New"
+                }
+              }
+            },
+
+            tooltip: {
+              backgroundColor: "#120c1f",
+              borderColor: "#ff0055",
+              borderWidth: 1,
+              titleColor: "#ff71ce",
+              bodyColor: "#eee9ff"
+            }
+          },
+
+          scales: {
+            x: {
+              ticks: {
+                color: "#706887",
+                font: {
+                  family: "Courier New",
+                  size: 9
+                }
+              },
+
+              grid: {
+                color: "rgba(169,160,199,.08)"
+              }
+            },
+
+            y: {
+              ticks: {
+                color: "#706887",
+                font: {
+                  family: "Courier New",
+                  size: 9
+                }
+              },
+
+              grid: {
+                color: "rgba(169,160,199,.08)"
+              }
+            }
+          }
+        }
+      });
+  }
+
+  [
+    ["budgetLimit", "limit"],
+    ["actualSpend", "spend"],
+    ["goldPrice", "gold"],
+    ["brentPrice", "brent"]
+  ].forEach(([id, key]) => {
+    document
+      .getElementById(id)
+      .addEventListener("input", e => {
+        state.budget[key] =
+          Number(e.target.value) || 0;
+
+        renderBudget();
+        saveState();
+      });
+  });
+
+  document
+    .getElementById("addBudgetEntry")
+    .addEventListener("click", () => {
+      const value =
+        Number(
+          document.getElementById(
+            "budgetEntryValue"
+          ).value
+        );
+
+      const label =
+        document.getElementById(
+          "budgetEntryLabel"
+        ).value.trim() ||
+        "Data point";
+
+      if (!Number.isFinite(value)) {
+        return;
+      }
+
+      state.budget.entries.push({
+        id: uid(),
+        date: new Date().toLocaleDateString(),
+        label,
+        value
+      });
+
+      document.getElementById(
+        "budgetEntryValue"
+      ).value = "";
+
+      document.getElementById(
+        "budgetEntryLabel"
+      ).value = "";
+
+      renderBudget();
+      saveState();
+    });
+
+  /* =======================================================
+     Module 6: Goals
+     ======================================================= */
+
+  const goalFields = [
+    "goal1Current",
+    "goal1Target",
+    "goal2Current",
+    "goal2Target",
+    "goal3Current",
+    "goal3Target"
+  ];
+
+  function renderGoals() {
+    for (let i = 1; i <= 3; i++) {
+      const current =
+        Number(
+          state.goals[
+            "goal" + i + "Current"
+          ]
+        ) || 0;
+
+      const target =
+        Number(
+          state.goals[
+            "goal" + i + "Target"
+          ]
+        ) || 0;
+
+      const percent =
+        target > 0
+          ? Math.min(
+              100,
+              Math.max(
+                0,
+                (current / target) * 100
+              )
+            )
+          : 0;
+
+      document.getElementById(
+        "goal" + i + "Current"
+      ).value = current;
+
+      document.getElementById(
+        "goal" + i + "Target"
+      ).value = target;
+
+      document.getElementById(
+        "goal" + i + "Percent"
+      ).textContent =
+        Math.round(percent) + "%";
+
+      document.getElementById(
+        "goal" + i + "Bar"
+      ).style.width =
+        percent + "%";
+    }
+  }
+
+  goalFields.forEach(id => {
+    document
+      .getElementById(id)
+      .addEventListener("input", e => {
+        state.goals[id] =
+          Number(e.target.value) || 0;
+
+        renderGoals();
+        saveState();
+      });
+  });
+
+  /* =======================================================
+     Running Metrics
+     ======================================================= */
+
+  function parseDuration(value) {
+    if (!value) return NaN;
+
+    const parts =
+      value.trim().split(":").map(Number);
+
+    if (
+      parts.length !== 2 &&
+      parts.length !== 3
+    ) {
+      return NaN;
+    }
+
+    if (parts.some(x => !Number.isFinite(x))) {
+      return NaN;
+    }
+
+    if (parts.length === 2) {
+      return (
+        parts[0] * 60 +
+        parts[1]
+      );
+    }
+
+    return (
+      parts[0] * 3600 +
+      parts[1] * 60 +
+      parts[2]
+    );
+  }
+
+  function formatPace(minutesPerKm) {
+    if (
+      !Number.isFinite(minutesPerKm) ||
+      minutesPerKm <= 0
+    ) {
+      return "--:--";
+    }
+
+    const totalSeconds =
+      Math.round(
+        minutesPerKm * 60
+      );
+
+    const minutes =
+      Math.floor(
+        totalSeconds / 60
+      );
+
+    const seconds =
+      totalSeconds % 60;
+
+    return (
+      pad(minutes) +
+      ":" +
+      pad(seconds)
+    );
+  }
+
+  function updateCurrentPace() {
+    const distance =
+      Number(
+        document.getElementById(
+          "runDistance"
+        ).value
+      );
+
+    const seconds =
+      parseDuration(
+        document.getElementById(
+          "runTime"
+        ).value
+      );
+
+    const pace =
+      distance > 0 && Number.isFinite(seconds)
+        ? (seconds / 60) / distance
+        : NaN;
+
+    document.getElementById(
+      "paceValue"
+    ).textContent =
+      formatPace(pace);
+  }
+
+  document
+    .getElementById("runDistance")
+    .addEventListener(
+      "input",
+      updateCurrentPace
+    );
+
+  document
+    .getElementById("runTime")
+    .addEventListener(
+      "input",
+      updateCurrentPace
+    );
+
+  function renderRunLog() {
+    const container =
+      document.getElementById("runLog");
+
+    container.innerHTML = "";
+
+    [...state.runs]
+      .reverse()
+      .forEach(run => {
+        const row =
+          document.createElement("div");
+
+        row.className = "run-entry";
+
+        const date =
+          document.createElement("span");
+
+        date.textContent = run.date;
+
+        const distance =
+          document.createElement("strong");
+
+        distance.textContent =
+          Number(run.distance).toFixed(2) +
+          " km";
+
+        const duration =
+          document.createElement("span");
+
+        duration.textContent =
+          run.duration;
+
+        const pace =
+          document.createElement("strong");
+
+        pace.textContent =
+          run.pace +
+          " /km";
+
+        const deleteButton =
+          document.createElement("button");
+
+        deleteButton.className =
+          "delete-btn";
+
+        deleteButton.textContent = "×";
+
+        deleteButton.addEventListener(
+          "click",
+          () => {
+            state.runs =
+              state.runs.filter(
+                x => x.id !== run.id
+              );
+
+            renderRunLog();
+            saveState();
+          }
+        );
+
+        row.append(
+          date,
+          distance,
+          duration,
+          pace,
+          deleteButton
+        );
+
+        container.appendChild(row);
+      });
+  }
+
+  document
+    .getElementById("addRun")
+    .addEventListener("click", () => {
+      const distance =
+        Number(
+          document.getElementById(
+            "runDistance"
+          ).value
+        );
+
+      const duration =
+        document.getElementById(
+          "runTime"
+        ).value.trim();
+
+      const seconds =
+        parseDuration(duration);
+
+      if (
+        !Number.isFinite(distance) ||
+        distance <= 0 ||
+        !Number.isFinite(seconds) ||
+        seconds <= 0
+      ) {
+        alert(
+          "Enter a valid distance and elapsed time."
+        );
+
+        return;
+      }
+
+      const pace =
+        formatPace(
+          (seconds / 60) /
+          distance
+        );
+
+      state.runs.push({
+        id: uid(),
+        date: new Date().toLocaleDateString(),
+        distance,
+        duration,
+        pace
+      });
+
+      document.getElementById(
+        "runDistance"
+      ).value = "";
+
+      document.getElementById(
+        "runTime"
+      ).value = "";
+
+      document.getElementById(
+        "paceValue"
+      ).textContent = "--:--";
+
+      renderRunLog();
+      saveState();
+    });
+
+  /* =======================================================
+     Initialization
+     ======================================================= */
+
+  function initializeDefaults() {
+    if (!state.shift.anchor) {
+      state.shift.anchor =
+        dateKey(mondayOf(new Date()));
+    }
+
+    if (!Array.isArray(state.runs)) {
+      state.runs = [];
+    }
+
+    if (!Array.isArray(state.budget.entries)) {
+      state.budget.entries = [];
+    }
+
+    if (!state.checklists.daily.length) {
+      state.checklists.daily = [];
+    }
+
+    if (!state.checklists.ops.length) {
+      state.checklists.ops = [];
+    }
+  }
+
+  function renderEverything() {
+    renderAlarm();
+
+    renderTimetable();
+
+    renderChecklist("daily");
+    renderChecklist("ops");
+
+    document.getElementById(
+      "maintenanceLog"
+    ).value =
+      state.checklists.maintenanceLog || "";
+
+    document.getElementById(
+      "rotationAnchor"
+    ).value =
+      state.shift.anchor;
+
+    document.getElementById(
+      "coverageOverride"
+    ).checked =
+      Boolean(
+        state.shift.coverageOverride
+      );
+
+    renderShift();
+    renderBudget();
+    renderGoals();
+    renderRunLog();
+  }
+
+  loadState();
+  initializeDefaults();
+  renderEverything();
+
+  updateClock();
+
+  setInterval(
+    updateClock,
+    1000
+  );
+
+  /*
+    Re-render timetable at the start of each minute
+    so current-hour highlighting stays accurate.
+  */
+  setInterval(() => {
+    renderTimetable();
+  }, 60000);
+
+  /*
+    Persist defaults if they were created during initialization.
+  */
+  saveState();
+
+})();
+</script>
+
+</body>
+</html>
